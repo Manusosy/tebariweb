@@ -87,6 +87,9 @@ export const MOCK_SUBMISSIONS: CollectionSubmission[] = [
   }
 ];
 
+// Export types to be used in other files
+export type { Hotspot, CollectionSubmission, User };
+
 // Database Schema Representation (for future migration)
 export const POSTGRES_SCHEMA_REFERENCE = `
 -- Users Table

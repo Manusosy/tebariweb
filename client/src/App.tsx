@@ -9,6 +9,9 @@ import LoginPage from "@/pages/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import FieldDashboard from "@/pages/field/dashboard";
 import PartnerDashboard from "@/pages/partner/dashboard";
+import SubmissionsPage from "@/pages/admin/submissions";
+import HotspotsPage from "@/pages/admin/hotspots";
+import OfficersPage from "@/pages/admin/officers";
 
 function Router() {
   return (
@@ -19,6 +22,9 @@ function Router() {
       {/* Admin Routes */}
       <Route path="/dashboard" component={AdminDashboard} />
       <Route path="/map" component={AdminDashboard} /> 
+      <Route path="/submissions" component={SubmissionsPage} />
+      <Route path="/hotspots" component={HotspotsPage} />
+      <Route path="/officers" component={OfficersPage} />
       
       {/* Field Officer Routes */}
       <Route path="/collection/new" component={FieldDashboard} />
