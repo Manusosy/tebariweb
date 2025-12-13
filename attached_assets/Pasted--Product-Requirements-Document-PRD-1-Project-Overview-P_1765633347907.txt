@@ -1,0 +1,342 @@
+# Product Requirements Document (PRD)
+
+## 1. Project Overview
+
+**Product Name:** Tebari Plastic Hotspot Tracking System
+**Phase:** Pilot / Demo-ready MVP
+**Region Focus:** Kenya (Coastal regions first – Kilifi, Mtwapa, Watamu, etc.)
+
+Tebari is building a **data-driven plastic waste intelligence platform** that enables real-time mapping of plastic waste hotspots, efficient coordination with recyclers, and transparent reporting for partners and funders.
+
+This pilot system will be **fully functional**, suitable for **real-world pilot use**, while also acting as a **funding and investor demo**. It will later evolve into an enterprise-grade system (Django + DRF + Mobile App), but for now will be delivered as a **Vite + React web application** with strict role-based access.
+
+---
+
+## 2. Goals & Success Criteria
+
+### Primary Goals
+
+* Enable field officers to **accurately capture plastic collection data** with GPS + EXIF verification
+* Visualize **plastic hotspots on a live map**
+* Provide admins with **full operational oversight**
+* Provide recyclers, partners, and funders with **controlled access to verified reports**
+
+### Success Indicators
+
+* All submitted data is **GPS-verified**
+* Admin approval workflow ensures **data credibility**
+* Clear visualization of **hotspot trends (increasing / decreasing)**
+* System is demo-ready within a short build timeline
+
+---
+
+## 3. User Roles & Permissions
+
+### 3.1 Super Admin (CEO / Owner)
+
+**Purpose:** Strategic oversight & external reporting
+
+**Capabilities:**
+
+* Full system access
+* View all dashboards and analytics
+* Manage Admin users
+* Control which reports are shared with:
+
+  * Recyclers
+  * Partners
+  * Funders
+* Export high-level reports
+
+---
+
+### 3.2 Admin (Tebari Operations Team)
+
+**Purpose:** Daily system and data management
+
+**Capabilities:**
+
+* Manage Field Officers
+* Manage Recycler accounts
+* Verify and approve field submissions
+* View and manage all hotspots
+* Access all analytics and reports
+* Control hotspot statuses
+
+---
+
+### 3.3 Field Officer
+
+**Purpose:** Ground data collection
+
+**Capabilities:**
+
+* View assigned / nearby locations
+* Submit plastic collection records
+* Capture mandatory photos
+* Auto-capture GPS + EXIF data
+* Input plastic type(s) and volume
+
+**Restrictions:**
+
+* Cannot edit data after submission
+* Cannot access analytics or reports
+
+---
+
+### 3.4 Recyclers / Partners / Funders
+
+**Purpose:** Visibility & accountability
+
+**Capabilities:**
+
+* View approved reports only
+* View hotspot locations (read-only)
+* Access impact and volume metrics
+
+**Restrictions:**
+
+* No data creation or editing
+
+---
+
+## 4. Global Layout & UX Standards
+
+### Shared Dashboard Layout (All Roles)
+
+* **Collapsible Sidebar (Left)**
+* **Top Header** containing:
+
+  * Centered global search bar
+  * Notifications icon (connected to system notifications)
+  * Three-dot menu:
+
+    * Profile
+    * Settings
+    * Sign out
+
+### Design Principles
+
+* Font: **Helvetica**
+* Clean, modern, professional
+* Map-first and data-forward
+* Optimized for desktop and tablet
+
+---
+
+## 5. Core Features
+
+### 5.1 Hotspot Mapping
+
+* GPS-point based hotspots (no polygons)
+* Powered by **Leaflet + OpenStreetMap**
+* Marker colors indicate severity
+* Density toggle for heatmap view
+
+### 5.2 Plastic Types Supported
+
+* PET
+* HDPE
+* PP
+* LDPE
+* PS
+* PVC
+* Other
+
+Filterable across all dashboards
+
+---
+
+### 5.3 Field Data Capture Workflow
+
+1. Field Officer logs in
+2. Navigates to **New Collection**
+3. Captures photo (mandatory)
+4. System extracts:
+
+   * GPS coordinates
+   * Timestamp (EXIF)
+5. Officer inputs:
+
+   * Plastic type(s)
+   * Weight / volume
+   * Optional notes
+6. Submission status set to **Pending Approval**
+
+---
+
+### 5.4 Admin Verification Workflow
+
+* Admin reviews submissions
+* Confirms:
+
+  * Location accuracy
+  * Image validity
+  * Volume reasonability
+* Admin actions:
+
+  * Approve
+  * Reject (with reason)
+
+Only **approved data** appears in reports and dashboards.
+
+---
+
+### 5.5 Hotspot Status & Trends
+
+Each hotspot includes:
+
+* Status:
+
+  * New
+  * Active
+  * Critical
+  * Improving
+  * Collected / Archived
+
+* Trend Indicator:
+
+  * Upward (increasing plastic volume)
+  * Downward (decreasing volume)
+  * Stable
+
+Trends are calculated based on **historical submissions**.
+
+---
+
+## 6. Dashboards by Role
+
+### 6.1 Admin Dashboard
+
+**Sidebar Menu:**
+
+* Dashboard
+* Map View
+* Hotspots
+* Field Officers
+* Submissions
+* Recyclers
+* Reports
+* Notifications
+* Settings
+
+**Dashboard Widgets:**
+
+* Real-time total plastic collected (tons)
+* Breakdown by plastic type
+* Critical hotspots list
+* Average collection time
+* Fulfillment / collection rate
+
+---
+
+### 6.2 Super Admin Dashboard
+
+**Sidebar Menu:**
+
+* Executive Dashboard
+* Reports
+* Impact Analytics
+* Admin Management
+* Data Exports
+* Settings
+
+**Key Views:**
+
+* High-level KPIs
+* Environmental impact metrics
+* Funding-ready summaries
+
+---
+
+### 6.3 Field Officer Dashboard
+
+**Sidebar Menu:**
+
+* My Dashboard
+* New Collection
+* My Submissions
+* Map
+* Notifications
+* Profile
+
+**Key Views:**
+
+* Nearby hotspots
+* Submission history
+* Status of submissions
+
+---
+
+### 6.4 Recycler / Funder Dashboard
+
+**Sidebar Menu:**
+
+* Overview
+* Map (Read-only)
+* Reports
+* Impact Metrics
+* Profile
+
+**Key Views:**
+
+* Approved hotspot data
+* Plastic volume trends
+* Downloadable reports
+
+---
+
+## 7. Notifications System
+
+* Submission approved / rejected
+* New critical hotspot detected
+* Reports shared by Super Admin
+
+---
+
+## 8. Reporting & Exports
+
+* CSV / Excel exports
+* PDF summary reports
+* Role-based visibility
+
+---
+
+## 9. Tech Stack (Pilot)
+
+### Frontend
+
+* Vite + React
+* Leaflet + OpenStreetMap
+* Charting (Recharts / Chart.js)
+
+### Backend (Pilot)
+
+* Lightweight API (can be swapped later)
+
+### Future (Enterprise)
+
+* Django + DRF
+* PostgreSQL
+* Mobile App for Field Officers
+
+---
+
+## 10. Deployment & Demo Strategy
+
+* Hosted on VPS
+* Seeded demo data for funders
+* Real-time demo scenarios
+
+---
+
+## 11. Future Enhancements
+
+* Mobile app (offline-first)
+* Polygon mapping
+* AI-based hotspot prediction
+* Integration with recycler logistics
+
+---
+
+**End of PRD – Tebari Plastic Hotspot Tracking System (v1)**
