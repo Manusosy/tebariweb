@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { MOCK_USERS } from "@/lib/mock-data";
 
 export default function LoginPage() {
   const [_, setLocation] = useLocation();
@@ -22,7 +21,9 @@ export default function LoginPage() {
       setLoading(false);
       // In a real app, we'd store the token/user here
       if (selectedRole === 'field_officer') {
-        setLocation('/collection/new'); // Direct field officers to action
+        setLocation('/field/dashboard'); // Updated to point to new Field Overview
+      } else if (selectedRole === 'partner') {
+        setLocation('/reports');
       } else {
         setLocation('/dashboard');
       }

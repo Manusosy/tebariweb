@@ -6,12 +6,21 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
+
+// Admin Pages
 import AdminDashboard from "@/pages/admin/dashboard";
-import FieldDashboard from "@/pages/field/dashboard";
-import PartnerDashboard from "@/pages/partner/dashboard";
 import SubmissionsPage from "@/pages/admin/submissions";
 import HotspotsPage from "@/pages/admin/hotspots";
 import OfficersPage from "@/pages/admin/officers";
+
+// Field Officer Pages
+import FieldOverview from "@/pages/field/overview";
+import NewCollectionPage from "@/pages/field/new-collection";
+import MySubmissionsPage from "@/pages/field/my-submissions";
+import FieldMapView from "@/pages/field/map-view";
+
+// Partner Pages
+import PartnerDashboard from "@/pages/partner/dashboard";
 
 function Router() {
   return (
@@ -27,7 +36,10 @@ function Router() {
       <Route path="/officers" component={OfficersPage} />
       
       {/* Field Officer Routes */}
-      <Route path="/collection/new" component={FieldDashboard} />
+      <Route path="/field/dashboard" component={FieldOverview} />
+      <Route path="/collection/new" component={NewCollectionPage} />
+      <Route path="/field/submissions" component={MySubmissionsPage} />
+      <Route path="/field/map" component={FieldMapView} />
       
       {/* Partner Routes */}
       <Route path="/reports" component={PartnerDashboard} />

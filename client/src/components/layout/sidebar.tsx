@@ -10,7 +10,9 @@ import {
   Menu,
   X,
   PlusCircle,
-  BarChart3
+  BarChart3,
+  List,
+  LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -21,29 +23,36 @@ interface SidebarProps {
   setCollapsed: (v: boolean) => void;
 }
 
+interface SidebarLink {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
 export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
   const [location] = useLocation();
   const isMobile = useIsMobile();
 
-  const commonLinks = [
+  const commonLinks: SidebarLink[] = [];
+
+  const adminLinks: SidebarLink[] = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/map', label: 'Map View', icon: Map },
-  ];
-
-  const adminLinks = [
     { href: '/hotspots', label: 'Hotspots', icon: Map },
     { href: '/officers', label: 'Field Officers', icon: Users },
     { href: '/submissions', label: 'Submissions', icon: FileText },
     { href: '/reports', label: 'Reports', icon: BarChart3 },
   ];
 
-  const fieldLinks = [
+  const fieldLinks: SidebarLink[] = [
+    { href: '/field/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
     { href: '/collection/new', label: 'New Collection', icon: PlusCircle },
-    { href: '/submissions', label: 'My Submissions', icon: FileText },
+    { href: '/field/submissions', label: 'My Submissions', icon: List },
+    { href: '/field/map', label: 'Zone Map', icon: Map },
   ];
 
-  const partnerLinks = [
-    { href: '/reports', label: 'Reports', icon: FileText },
+  const partnerLinks: SidebarLink[] = [
+    { href: '/reports', label: 'Overview', icon: LayoutDashboard },
     { href: '/impact', label: 'Impact Metrics', icon: BarChart3 },
   ];
 
