@@ -12,7 +12,9 @@ import {
   PlusCircle,
   BarChart3,
   List,
-  LucideIcon
+  LucideIcon,
+  Truck,
+  PieChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -52,8 +54,9 @@ export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
   ];
 
   const partnerLinks: SidebarLink[] = [
-    { href: '/reports', label: 'Overview', icon: LayoutDashboard },
-    { href: '/impact', label: 'Impact Metrics', icon: BarChart3 },
+    { href: '/partner/overview', label: 'Impact Dashboard', icon: LayoutDashboard },
+    { href: '/partner/collections', label: 'Collections', icon: Truck },
+    { href: '/partner/analytics', label: 'Analytics', icon: PieChart },
   ];
 
   let links = [...commonLinks];

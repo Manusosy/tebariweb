@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
+import SettingsPage from "@/pages/settings";
 
 // Admin Pages
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -20,13 +21,15 @@ import MySubmissionsPage from "@/pages/field/my-submissions";
 import FieldMapView from "@/pages/field/map-view";
 
 // Partner Pages
-import PartnerDashboard from "@/pages/partner/dashboard";
+import PartnerOverview from "@/pages/partner/overview";
+import PartnerCollections from "@/pages/partner/collections";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={LoginPage} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/settings" component={SettingsPage} />
       
       {/* Admin Routes */}
       <Route path="/dashboard" component={AdminDashboard} />
@@ -42,8 +45,10 @@ function Router() {
       <Route path="/field/map" component={FieldMapView} />
       
       {/* Partner Routes */}
-      <Route path="/reports" component={PartnerDashboard} />
-      <Route path="/impact" component={PartnerDashboard} />
+      <Route path="/reports" component={PartnerOverview} /> 
+      <Route path="/partner/overview" component={PartnerOverview} />
+      <Route path="/partner/collections" component={PartnerCollections} />
+      <Route path="/partner/analytics" component={PartnerOverview} /> {/* Reusing Overview for Analytics for now as it contains charts */}
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

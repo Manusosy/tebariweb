@@ -21,9 +21,9 @@ export default function LoginPage() {
       setLoading(false);
       // In a real app, we'd store the token/user here
       if (selectedRole === 'field_officer') {
-        setLocation('/field/dashboard'); // Updated to point to new Field Overview
+        setLocation('/field/dashboard');
       } else if (selectedRole === 'partner') {
-        setLocation('/reports');
+        setLocation('/partner/overview'); // Updated to point to new Partner Overview
       } else {
         setLocation('/dashboard');
       }
