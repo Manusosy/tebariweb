@@ -23,7 +23,9 @@ export default function LoginPage() {
       if (selectedRole === 'field_officer') {
         setLocation('/field/dashboard');
       } else if (selectedRole === 'partner') {
-        setLocation('/partner/overview'); // Updated to point to new Partner Overview
+        setLocation('/partner/overview');
+      } else if (selectedRole === 'super_admin') {
+        setLocation('/executive');
       } else {
         setLocation('/dashboard');
       }

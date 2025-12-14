@@ -14,7 +14,8 @@ import {
   List,
   LucideIcon,
   Truck,
-  PieChart
+  PieChart,
+  Briefcase
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,6 +37,14 @@ export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
   const isMobile = useIsMobile();
 
   const commonLinks: SidebarLink[] = [];
+
+  const superAdminLinks: SidebarLink[] = [
+    { href: '/executive', label: 'Executive Overview', icon: Briefcase },
+    // Super admin also inherits admin links usually, but let's keep it focused for this role based on PRD
+    { href: '/dashboard', label: 'Ops Dashboard', icon: LayoutDashboard },
+    { href: '/reports', label: 'Global Reports', icon: BarChart3 },
+    { href: '/officers', label: 'Team Mgmt', icon: Users },
+  ];
 
   const adminLinks: SidebarLink[] = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -60,9 +69,10 @@ export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
   ];
 
   let links = [...commonLinks];
-  if (role === 'admin' || role === 'super_admin') links = [...links, ...adminLinks];
-  if (role === 'field_officer') links = [...links, ...fieldLinks];
-  if (role === 'partner') links = [...links, ...partnerLinks];
+  if (role === 'super_admin') links = [...links, ...superAdminLinks];
+  else if (role === 'admin') links = [...links, ...adminLinks];
+  else if (role === 'field_officer') links = [...links, ...fieldLinks];
+  else if (role === 'partner') links = [...links, ...partnerLinks];
 
   return (
     <div 

@@ -14,6 +14,9 @@ import SubmissionsPage from "@/pages/admin/submissions";
 import HotspotsPage from "@/pages/admin/hotspots";
 import OfficersPage from "@/pages/admin/officers";
 
+// Super Admin Pages
+import SuperAdminDashboard from "@/pages/super-admin/dashboard";
+
 // Field Officer Pages
 import FieldOverview from "@/pages/field/overview";
 import NewCollectionPage from "@/pages/field/new-collection";
@@ -32,6 +35,9 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/settings" component={SettingsPage} />
       
+      {/* Super Admin Routes */}
+      <Route path="/executive" component={SuperAdminDashboard} />
+
       {/* Admin Routes */}
       <Route path="/dashboard" component={AdminDashboard} />
       <Route path="/map" component={AdminDashboard} /> 
