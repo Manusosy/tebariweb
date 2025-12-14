@@ -23,6 +23,7 @@ import FieldMapView from "@/pages/field/map-view";
 // Partner Pages
 import PartnerOverview from "@/pages/partner/overview";
 import PartnerCollections from "@/pages/partner/collections";
+import PartnerAnalytics from "@/pages/partner/analytics";
 
 function Router() {
   return (
@@ -48,7 +49,7 @@ function Router() {
       <Route path="/reports" component={PartnerOverview} /> 
       <Route path="/partner/overview" component={PartnerOverview} />
       <Route path="/partner/collections" component={PartnerCollections} />
-      <Route path="/partner/analytics" component={PartnerOverview} /> {/* Reusing Overview for Analytics for now as it contains charts */}
+      <Route path="/partner/analytics" component={PartnerAnalytics} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
