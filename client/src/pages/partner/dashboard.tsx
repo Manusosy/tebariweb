@@ -6,14 +6,17 @@ import { Scale, MapPin, TrendingUp, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+import { useAuth } from "@/hooks/use-auth";
+
 export default function PartnerDashboard() {
-  const totalVolume = MOCK_HOTSPOTS.reduce((acc, h) => acc + h.estimatedVolume, 0);
+  const { user } = useAuth();
+  const totalVolume = MOCK_HOTSPOTS.reduce((acc, h) => acc + Number(h.estimatedVolume), 0);
 
   return (
-    <DashboardLayout 
-      userRole="partner" 
-      userName="Eco Partners" 
-      userEmail="partner@eco.com"
+    <DashboardLayout
+      userRole="partner"
+      userName={user?.name || "Partner"}
+      userEmail={user?.email || ""}
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -29,22 +32,22 @@ export default function PartnerDashboard() {
 
         {/* Stats Row */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <StatCard 
-            title="Total Plastic Recovered" 
+          <StatCard
+            title="Total Plastic Recovered"
             value={`${totalVolume}kg`}
             icon={Scale}
             trend="up"
             trendValue="Verified"
             className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800"
           />
-          <StatCard 
-            title="Hotspots Monitored" 
+          <StatCard
+            title="Hotspots Monitored"
             value={MOCK_HOTSPOTS.length}
             icon={MapPin}
             description="Active surveillance"
           />
-          <StatCard 
-            title="Community Impact" 
+          <StatCard
+            title="Community Impact"
             value="High"
             icon={TrendingUp}
             description="3 new jobs created"

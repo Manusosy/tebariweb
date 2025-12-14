@@ -2,37 +2,94 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Scale, MapPin, TrendingUp, Download, Recycle, Leaf, Users } from "lucide-react";
+import { Scale, MapPin, TrendingUp, Download, Recycle, Leaf, Users, MessageSquare, Loader2 } from "lucide-react";
 import { HotspotMap } from "@/components/map/hotspot-map";
-import { MOCK_HOTSPOTS } from "@/lib/mock-data";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
+import { useQuery } from "@tanstack/react-query";
+import { Hotspot, Collection, CollectionItem, User } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import { format } from "date-fns";
+
+type CollectionWithDetails = Collection & {
+  items: CollectionItem[];
+  hotspot: Hotspot | null;
+};
 
 export default function PartnerOverview() {
-  const totalVolume = MOCK_HOTSPOTS.reduce((acc, h) => acc + h.estimatedVolume, 0);
-  const totalRecovered = Math.round(totalVolume * 0.65); // Simulating recovered amount
+  const { user } = useAuth();
 
-  const trendData = [
-    { month: 'Jan', collected: 1200, recovered: 800 },
-    { month: 'Feb', collected: 1500, recovered: 950 },
-    { month: 'Mar', collected: 1100, recovered: 850 },
-    { month: 'Apr', collected: 1800, recovered: 1200 },
-    { month: 'May', collected: 2100, recovered: 1600 },
-    { month: 'Jun', collected: 1950, recovered: 1500 },
-  ];
+  // Fetch real data
+  const { data: hotspots, isLoading: loadingHotspots } = useQuery<Hotspot[]>({
+    queryKey: ["/api/hotspots"],
+  });
 
-  const compositionData = [
-    { name: 'PET (Bottles)', value: 45, color: '#0ea5e9' },
-    { name: 'HDPE (Rigid)', value: 25, color: '#22c55e' },
-    { name: 'LDPE (Film)', value: 15, color: '#eab308' },
-    { name: 'PP (Misc)', value: 10, color: '#f97316' },
-    { name: 'Other', value: 5, color: '#64748b' },
-  ];
+  const { data: collections, isLoading: loadingCollections } = useQuery<CollectionWithDetails[]>({
+    queryKey: ["/api/collections"],
+  });
+
+  const { data: users } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const isLoading = loadingHotspots || loadingCollections;
+
+  // Calculate real metrics
+  const verifiedCollections = (collections || []).filter(c => c.status === 'verified');
+
+  const totalRecovered = verifiedCollections.reduce((acc, c) => {
+    const weight = c.items.reduce((sum, item) => sum + Number(item.weight), 0);
+    return acc + weight;
+  }, 0);
+
+  // Material composition from verified collections
+  const materialCounts: Record<string, number> = {};
+  verifiedCollections.forEach(c => {
+    c.items.forEach(item => {
+      const type = item.materialType.toUpperCase();
+      materialCounts[type] = (materialCounts[type] || 0) + Number(item.weight);
+    });
+  });
+
+  const compositionData = Object.entries(materialCounts).map(([name, value]) => ({
+    name,
+    value,
+    color: getColorForType(name)
+  }));
+
+  function getColorForType(type: string): string {
+    const colors: Record<string, string> = {
+      'PET': '#0ea5e9',
+      'HDPE': '#22c55e',
+      'LDPE': '#eab308',
+      'PP': '#f97316',
+      'PS': '#ef4444',
+      'PVC': '#8b5cf6',
+    };
+    return colors[type] || '#64748b';
+  }
+
+  // CO2 offset estimation (rough: ~2.5kg CO2 per kg plastic recovered)
+  const co2Offset = (totalRecovered * 2.5 / 1000).toFixed(1);
+
+  // Field officers count
+  const fieldOfficersCount = (users || []).filter(u => u.role === 'field_officer' && u.status === 'active').length;
+
+  // Collection notes from verified submissions
+  const recentNotes = verifiedCollections
+    .filter(c => c.notes && c.notes.trim() !== '')
+    .slice(0, 5);
+
+  // Get officer name helper
+  const getOfficerName = (userId: number) => {
+    const officer = users?.find(u => u.id === userId);
+    return officer?.name || `Officer #${userId}`;
+  };
 
   return (
-    <DashboardLayout 
-      userRole="partner" 
-      userName="Eco Partners" 
-      userEmail="partner@eco.com"
+    <DashboardLayout
+      userRole="partner"
+      userName={user?.name || "Partner"}
+      userEmail={user?.email || ""}
     >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -50,87 +107,113 @@ export default function PartnerOverview() {
 
         {/* High Level Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard 
-            title="Total Plastic Recovered" 
-            value={`${totalRecovered}kg`}
+          <StatCard
+            title="Total Plastic Recovered"
+            value={isLoading ? "..." : `${totalRecovered.toFixed(1)}kg`}
             icon={Recycle}
             trend="up"
-            trendValue="15% vs last month"
+            trendValue="Verified"
             className="bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800"
           />
-          <StatCard 
-            title="CO2 Emissions Offset" 
-            value="3.2 Tons"
+          <StatCard
+            title="CO2 Emissions Offset"
+            value={isLoading ? "..." : `${co2Offset} Tons`}
             icon={Leaf}
             description="Estimated equivalent"
             className="bg-sky-50/50 border-sky-200 dark:bg-sky-950/20 dark:border-sky-800"
           />
-          <StatCard 
-            title="Community Jobs" 
-            value="12"
+          <StatCard
+            title="Active Field Officers"
+            value={isLoading ? "..." : fieldOfficersCount}
             icon={Users}
-            description="Field officers supported"
+            description="Supporting recovery"
           />
-          <StatCard 
-            title="Active Collection Zones" 
-            value={MOCK_HOTSPOTS.length}
+          <StatCard
+            title="Active Collection Zones"
+            value={isLoading ? "..." : (hotspots || []).length}
             icon={MapPin}
             trend="up"
-            trendValue="2 new zones"
+            trendValue="Documented hotspots"
           />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Recovery Trend Chart */}
-          <Card className="col-span-2 shadow-sm">
+          {/* Material Composition Chart */}
+          <Card className="col-span-1 shadow-sm">
             <CardHeader>
-              <CardTitle>Recovery Trends (6 Months)</CardTitle>
-              <CardDescription>Volume of plastic identified vs. successfully recovered.</CardDescription>
+              <CardTitle>Material Composition</CardTitle>
+              <CardDescription>Breakdown by plastic type (verified collections).</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    cursor={{ fill: 'transparent' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend />
-                  <Bar dataKey="collected" name="Identified" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="recovered" name="Recovered" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {isLoading ? (
+                <div className="h-[300px] flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : compositionData.length === 0 ? (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  No verified collections yet
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={compositionData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {compositionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend layout="vertical" verticalAlign="middle" align="right" />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
-          {/* Composition Chart */}
-          <Card className="shadow-sm">
+          {/* Field Notes */}
+          <Card className="col-span-2 shadow-sm">
             <CardHeader>
-              <CardTitle>Material Composition</CardTitle>
-              <CardDescription>Breakdown by plastic type.</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Field Notes
+              </CardTitle>
+              <CardDescription>Recent observations from field officers.</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={compositionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {compositionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend layout="vertical" verticalAlign="middle" align="right" />
-                </PieChart>
-              </ResponsiveContainer>
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-16 bg-muted/50 rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              ) : recentNotes.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                  <p>No field notes available yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentNotes.map((collection) => (
+                    <div key={collection.id} className="p-4 bg-muted/30 rounded-lg border-l-4 border-primary/30">
+                      <p className="text-sm italic mb-2">"{collection.notes}"</p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="font-medium">{getOfficerName(collection.userId)}</span>
+                        <span>{collection.collectedAt ? format(new Date(collection.collectedAt), 'MMM dd, yyyy') : ''}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        📍 {collection.hotspot?.name || collection.newHotspotName || 'Unknown location'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -140,11 +223,17 @@ export default function PartnerOverview() {
           <CardHeader className="border-b bg-muted/20">
             <div className="flex items-center justify-between">
               <CardTitle>Live Collection Map</CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs">View Full Map &rarr;</Button>
+              <span className="text-xs text-muted-foreground">{(hotspots || []).length} active zones</span>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <HotspotMap hotspots={MOCK_HOTSPOTS} className="h-[400px] w-full rounded-none" readonly />
+            {isLoading ? (
+              <div className="h-[400px] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <HotspotMap hotspots={hotspots || []} className="h-[400px] w-full rounded-none" />
+            )}
           </CardContent>
         </Card>
       </div>

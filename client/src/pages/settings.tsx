@@ -10,11 +10,15 @@ import { Bell, Lock, User, Globe } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
+import { useAuth } from "@/hooks/use-auth";
+
 export default function SettingsPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const handleSave = () => {
+    // In a real app, this would be a mutation to update the user
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
@@ -26,7 +30,11 @@ export default function SettingsPage() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      userRole={(user?.role as any) || "field_officer"}
+      userName={user?.name || "User"}
+      userEmail={user?.email || ""}
+    >
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
@@ -34,12 +42,13 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
+          {/* ... TabsList ... */}
           <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="profile" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
@@ -49,27 +58,29 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src="https://github.com/shadcn.png" />
-                    <AvatarFallback>CN</AvatarFallback>
+                    {/* <AvatarImage src="https://github.com/shadcn.png" /> */}
+                    <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                      {user?.name?.slice(0, 2).toUpperCase() || "CN"}
+                    </AvatarFallback>
                   </Avatar>
                   <Button variant="outline">Change Avatar</Button>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue="Sarah Ops" />
+                    <Input id="name" defaultValue={user?.name} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" defaultValue="sarah@tebari.com" />
+                    <Input id="email" defaultValue={user?.email || ""} disabled className="bg-muted" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" defaultValue="+254 712 345 678" />
+                    <Input id="phone" placeholder="+254 ..." />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="org">Organization</Label>
-                    <Input id="org" defaultValue="Tebari Operations" disabled />
+                    <Label htmlFor="org">Organization / Role</Label>
+                    <Input id="org" defaultValue={user?.organization || user?.role || "Tebari"} disabled />
                   </div>
                 </div>
                 <Button onClick={handleSave} disabled={loading}>

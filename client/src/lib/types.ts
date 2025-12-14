@@ -21,16 +21,17 @@ export interface Location {
 }
 
 export interface Hotspot {
-  id: string;
+  id: number;
   name: string;
-  location: Location;
-  status: HotspotStatus;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  trend: TrendDirection;
-  estimatedVolume: number; // in kg
-  reportedBy: string; // user id
-  reportedAt: string; // ISO date
-  imageUrl: string;
+  description: string | null;
+  latitude: string; // decimal
+  longitude: string; // decimal
+  status: string; // active, cleared, critical
+  estimatedVolume: string; // decimal
+  createdAt: Date | null;
+
+  // Optional for UI compatibility during migration if needed, but preferred to use schema fields
+  imageUrl?: string;
 }
 
 export interface CollectionSubmission {

@@ -1,6 +1,61 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+*.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Development
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
 .DS_Store
-server/public
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+.local/
+*.tsbuildinfo
 vite.config.ts.*
 *.tar.gz
+
+# Uploads (local files only)
+uploads/
+
+# Auth files
+auth_id.txt
+auth_key.txt
+supabase_info.json
+supabase_status.json
+
+# Temporary scripts/debug
+cleanup_users.ts
+debug_*.ts
+fix_role.ts
+revert_role.ts
+script/check_dns.js
+script/fetch_*.js
+script/resolve_*.js
+script/read_status*.js

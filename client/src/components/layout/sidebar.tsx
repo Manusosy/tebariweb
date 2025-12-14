@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
-import { 
-  LayoutDashboard, 
-  Map, 
-  Users, 
-  FileText, 
-  Settings, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Map,
+  MapPin,
+  Users,
+  FileText,
+  Settings,
+  LogOut,
   Menu,
   X,
   PlusCircle,
@@ -47,9 +48,9 @@ export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
   ];
 
   const adminLinks: SidebarLink[] = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
     { href: '/map', label: 'Map View', icon: Map },
-    { href: '/hotspots', label: 'Hotspots', icon: Map },
+    { href: '/hotspots', label: 'Zones', icon: MapPin },
     { href: '/officers', label: 'Field Officers', icon: Users },
     { href: '/submissions', label: 'Submissions', icon: FileText },
     { href: '/reports', label: 'Reports', icon: BarChart3 },
@@ -75,7 +76,7 @@ export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
   else if (role === 'partner') links = [...links, ...partnerLinks];
 
   return (
-    <div 
+    <div
       className={cn(
         "h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-all duration-300 ease-in-out relative z-20",
         collapsed ? "w-[70px]" : "w-[240px]",
@@ -88,9 +89,9 @@ export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
             Tebari<span className="text-sidebar-primary">.</span>
           </span>
         )}
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ml-auto"
           onClick={() => setCollapsed(!collapsed)}
         >
@@ -104,8 +105,8 @@ export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
           return (
             <Link key={link.href} href={link.href} className={cn(
               "flex items-center gap-3 px-4 py-3 mx-2 rounded-md transition-colors text-sm font-medium cursor-pointer block",
-              isActive 
-                ? "bg-sidebar-primary text-sidebar-primary-foreground" 
+              isActive
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
                 : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               collapsed && "justify-center px-2"
             )} title={collapsed ? link.label : undefined}>

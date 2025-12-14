@@ -1,3 +1,14 @@
+/**
+ * @deprecated This file contains legacy mock data that is no longer used.
+ * All admin pages now fetch real data from the Supabase backend via API routes.
+ * This file is kept for reference only - contains PostgreSQL schema documentation.
+ * 
+ * Real data sources:
+ * - Hotspots: GET /api/hotspots
+ * - Collections: GET /api/collections
+ * - Users: GET /api/users
+ */
+
 import { Hotspot, CollectionSubmission, User } from './types';
 
 // Mock Users
@@ -11,51 +22,47 @@ export const MOCK_USERS: User[] = [
 // Mock Hotspots (Coastal Kenya focus: Kilifi, Mtwapa, Watamu)
 export const MOCK_HOTSPOTS: Hotspot[] = [
   {
-    id: 'h1',
+    id: 1,
     name: 'Watamu Beach North',
-    location: { lat: -3.350, lng: 40.015 },
-    status: 'Critical',
-    severity: 'critical',
-    trend: 'up',
-    estimatedVolume: 450,
-    reportedBy: 'u3',
-    reportedAt: '2025-02-10T08:30:00Z',
+    description: 'High volume of PET bottles reported washed up.',
+    latitude: '-3.350',
+    longitude: '40.015',
+    status: 'critical',
+    estimatedVolume: '450',
+    createdAt: new Date('2025-02-10T08:30:00Z'),
     imageUrl: 'https://images.unsplash.com/photo-1618477461853-5f8dd1203941?w=800&auto=format&fit=crop&q=60'
   },
   {
-    id: 'h2',
+    id: 2,
     name: 'Mtwapa Creek Landing',
-    location: { lat: -3.935, lng: 39.760 },
-    status: 'Active',
-    severity: 'high',
-    trend: 'stable',
-    estimatedVolume: 200,
-    reportedBy: 'u3',
-    reportedAt: '2025-02-12T10:15:00Z',
+    description: 'Accumulation near the landing site.',
+    latitude: '-3.935',
+    longitude: '39.760',
+    status: 'active',
+    estimatedVolume: '200',
+    createdAt: new Date('2025-02-12T10:15:00Z'),
     imageUrl: 'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?w=800&auto=format&fit=crop&q=60'
   },
   {
-    id: 'h3',
+    id: 3,
     name: 'Kilifi Bridge Underpass',
-    location: { lat: -3.630, lng: 39.850 },
-    status: 'Improving',
-    severity: 'medium',
-    trend: 'down',
-    estimatedVolume: 80,
-    reportedBy: 'u2',
-    reportedAt: '2025-02-05T14:20:00Z',
+    description: 'Collection in progress. Status improving.',
+    latitude: '-3.630',
+    longitude: '39.850',
+    status: 'cleared',
+    estimatedVolume: '80',
+    createdAt: new Date('2025-02-05T14:20:00Z'),
     imageUrl: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800&auto=format&fit=crop&q=60'
   },
   {
-    id: 'h4',
+    id: 4,
     name: 'Malindi Market Outskirts',
-    location: { lat: -3.220, lng: 40.110 },
-    status: 'New',
-    severity: 'low',
-    trend: 'up',
-    estimatedVolume: 50,
-    reportedBy: 'u3',
-    reportedAt: '2025-02-13T09:00:00Z',
+    description: 'New site identified near market.',
+    latitude: '-3.220',
+    longitude: '40.110',
+    status: 'active',
+    estimatedVolume: '50',
+    createdAt: new Date('2025-02-13T09:00:00Z'),
     imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&auto=format&fit=crop&q=60'
   }
 ];
