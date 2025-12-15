@@ -11,7 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Collection, CollectionItem, Hotspot } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,15 +49,37 @@ export default function FieldOverview() {
 
   // Calculate Stats
   const mySubmissions = collections || [];
-  const totalCollected = mySubmissions.reduce((acc, s) => {
+
+  // Filter out rejected submissions for total calculation
+  const validSubmissions = mySubmissions.filter(s => s.status !== 'rejected');
+
+  const totalCollected = validSubmissions.reduce((acc, s) => {
     const weight = s.items.reduce((sum, item) => sum + Number(item.weight), 0);
     return acc + weight;
   }, 0);
 
   const pendingCount = mySubmissions.filter(s => s.status === 'pending').length;
+  // Verified count excludes rejected and pending
+  const verifiedCount = mySubmissions.filter(s => s.status === 'verified').length;
 
-  // Nearby hotspots (Just taking first 3 for now as we don't have geospatial query yet)
-  const nearbyHotspots = hotspots?.slice(0, 3) || [];
+  // Determine hotspots to show on map
+  const assignedHotspot = (user as any)?.assignedHotspot;
+
+  // If assigned, show that. Else show nearby (first 3).
+  let displayHotspots: Hotspot[] = [];
+  if (assignedHotspot) {
+    displayHotspots = [assignedHotspot];
+  } else {
+    displayHotspots = hotspots?.slice(0, 3) || [];
+  }
+
+  // Effect to center map on assigned hotspot when loaded
+  useEffect(() => {
+    if (assignedHotspot?.latitude && assignedHotspot?.longitude) {
+      setMapCenter([Number(assignedHotspot.latitude), Number(assignedHotspot.longitude)]);
+      setMapZoom(13);
+    }
+  }, [assignedHotspot]);
 
   const handleFocusLocation = (lat: number, lng: number) => {
     setMapCenter([lat, lng]);
@@ -107,16 +129,37 @@ export default function FieldOverview() {
               />
               <StatCard
                 title="Verified Submissions"
-                value={mySubmissions.length - pendingCount}
+                value={verifiedCount}
                 icon={CheckCircle}
                 className="border-emerald-200 bg-emerald-50 dark:bg-emerald-900/10 dark:border-emerald-900"
               />
-              <StatCard
-                title="Assigned Area"
-                value="Zone A"
-                icon={MapPin}
-                description={user?.organization || "Kilifi North"}
-              />
+              {/* Dynamic Assigned Area Card */}
+              {(() => {
+                // Now using direct relation from user object
+                const assignedHotspot = (user as any)?.assignedHotspot;
+
+                if (assignedHotspot) {
+                  return (
+                    <StatCard
+                      title="Assigned Area"
+                      value={assignedHotspot.name}
+                      icon={MapPin}
+                      description={assignedHotspot.description || "Active zone"}
+                      className="border-primary/20"
+                    />
+                  );
+                } else {
+                  return (
+                    <StatCard
+                      title="Assigned Area"
+                      value="Awaiting Assignment"
+                      icon={MapPin}
+                      description="Your admin will assign you a zone"
+                      className="border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-900"
+                    />
+                  );
+                }
+              })()}
             </>
           )}
         </div>
@@ -127,7 +170,7 @@ export default function FieldOverview() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-primary" />
-                Nearby Hotspots
+                {assignedHotspot ? "My Assigned Zone" : "Nearby Hotspots"}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -136,7 +179,7 @@ export default function FieldOverview() {
               ) : (
                 <div className="h-[300px] w-full">
                   <HotspotMap
-                    hotspots={nearbyHotspots}
+                    hotspots={displayHotspots}
                     className="w-full h-full rounded-none"
                     zoom={mapZoom}
                     center={mapCenter}
@@ -147,7 +190,7 @@ export default function FieldOverview() {
                 {loadingHotspots ? (
                   Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)
                 ) : (
-                  nearbyHotspots.map(spot => (
+                  displayHotspots.map(spot => (
                     <div key={spot.id}
                       className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
                       onClick={() => handleFocusLocation(Number(spot.latitude), Number(spot.longitude))}
@@ -163,8 +206,8 @@ export default function FieldOverview() {
                     </div>
                   ))
                 )}
-                {nearbyHotspots.length === 0 && !loadingHotspots && (
-                  <p className="text-sm text-muted-foreground text-center py-4">No hotspots found nearby.</p>
+                {displayHotspots.length === 0 && !loadingHotspots && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No hotspots to display.</p>
                 )}
               </div>
             </CardContent>

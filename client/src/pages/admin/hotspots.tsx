@@ -37,19 +37,47 @@ import { Hotspot } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-// Kenya coastal regions for zone selection
-const KENYA_ZONES = [
-  { name: "Mombasa", lat: "-4.0435", lng: "39.6682" },
-  { name: "Kilifi", lat: "-3.6305", lng: "39.8499" },
-  { name: "Malindi", lat: "-3.2138", lng: "40.1169" },
-  { name: "Watamu", lat: "-3.3540", lng: "40.0240" },
-  { name: "Mtwapa", lat: "-3.9412", lng: "39.7368" },
-  { name: "Nyali", lat: "-4.0305", lng: "39.7174" },
-  { name: "Diani", lat: "-4.3217", lng: "39.5802" },
-  { name: "Lamu", lat: "-2.2686", lng: "40.9020" },
-  { name: "Kwale", lat: "-4.1743", lng: "39.4521" },
-  { name: "Tana River", lat: "-1.8571", lng: "40.0542" },
-];
+// Kenya coastal regions with sub-locations for zone selection
+const KENYA_COASTAL_LOCATIONS: Record<string, { name: string; lat: string; lng: string }[]> = {
+  "Kilifi": [
+    { name: "Marereni", lat: "-2.9533", lng: "40.1850" },
+    { name: "Malindi Town", lat: "-3.2138", lng: "40.1169" },
+    { name: "Watamu", lat: "-3.3540", lng: "40.0240" },
+    { name: "Kilifi Town", lat: "-3.6305", lng: "39.8499" },
+    { name: "Mtwapa", lat: "-3.9412", lng: "39.7368" },
+    { name: "Takaungu", lat: "-3.7000", lng: "39.8500" },
+  ],
+  "Mombasa": [
+    { name: "Nyali", lat: "-4.0305", lng: "39.7174" },
+    { name: "Bamburi", lat: "-3.9833", lng: "39.7167" },
+    { name: "Likoni", lat: "-4.0767", lng: "39.6500" },
+    { name: "Kisauni", lat: "-3.9833", lng: "39.7333" },
+    { name: "Old Town", lat: "-4.0635", lng: "39.6682" },
+    { name: "Shanzu", lat: "-4.0000", lng: "39.7500" },
+    { name: "Mombasa Island", lat: "-4.0435", lng: "39.6682" },
+  ],
+  "Kwale": [
+    { name: "Diani", lat: "-4.3217", lng: "39.5802" },
+    { name: "Ukunda", lat: "-4.2833", lng: "39.5667" },
+    { name: "Shimba Hills", lat: "-4.2500", lng: "39.4333" },
+    { name: "Msambweni", lat: "-4.4667", lng: "39.4833" },
+    { name: "Shimoni", lat: "-4.6500", lng: "39.3833" },
+    { name: "Tiwi", lat: "-4.2333", lng: "39.6000" },
+  ],
+  "Lamu": [
+    { name: "Lamu Town", lat: "-2.2686", lng: "40.9020" },
+    { name: "Shela", lat: "-2.2833", lng: "40.9000" },
+    { name: "Pate Island", lat: "-2.0833", lng: "41.0667" },
+    { name: "Manda Island", lat: "-2.2500", lng: "40.9333" },
+    { name: "Mokowe", lat: "-2.1833", lng: "40.8500" },
+  ],
+  "Tana River": [
+    { name: "Kipini", lat: "-2.5167", lng: "40.5333" },
+    { name: "Garsen", lat: "-2.2667", lng: "40.1167" },
+    { name: "Hola", lat: "-1.5000", lng: "40.0333" },
+    { name: "Ngao", lat: "-2.0000", lng: "40.1500" },
+  ],
+};
 
 export default function HotspotsPage() {
   const { user } = useAuth();
@@ -61,14 +89,33 @@ export default function HotspotsPage() {
   // Form state for new zone
   const [newZoneName, setNewZoneName] = useState("");
   const [newZoneDescription, setNewZoneDescription] = useState("");
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [customLat, setCustomLat] = useState("");
-  const [customLng, setCustomLng] = useState("");
+  const [selectedCounty, setSelectedCounty] = useState("");
+  const [selectedSubLocation, setSelectedSubLocation] = useState("");
+  const [autoLat, setAutoLat] = useState("");
+  const [autoLng, setAutoLng] = useState("");
+  const [newZoneAccessibility, setNewZoneAccessibility] = useState("Truck");
+  const [newZonePartnerInfo, setNewZonePartnerInfo] = useState("");
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingHotspot, setEditingHotspot] = useState<Hotspot | null>(null);
+
+  // Get sub-locations for selected county
+  const subLocations = selectedCounty ? KENYA_COASTAL_LOCATIONS[selectedCounty] || [] : [];
 
   // Fetch real data from backend
   const { data: hotspots, isLoading, isError } = useQuery<Hotspot[]>({
     queryKey: ["/api/hotspots"],
   });
+
+  const resetForm = () => {
+    setNewZoneName("");
+    setNewZoneDescription("");
+    setSelectedCounty("");
+    setSelectedSubLocation("");
+    setAutoLat("");
+    setAutoLng("");
+    setNewZoneAccessibility("Truck"); // Default
+    setNewZonePartnerInfo("");
+  };
 
   // Mutation for updating hotspot status
   const updateMutation = useMutation({
@@ -79,6 +126,7 @@ export default function HotspotsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/hotspots"] });
       toast({ title: "Zone updated successfully" });
+      setIsEditOpen(false);
     },
     onError: () => {
       toast({ title: "Failed to update zone", variant: "destructive" });
@@ -87,7 +135,7 @@ export default function HotspotsPage() {
 
   // Mutation for creating new zone
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; latitude: string; longitude: string; status: string; estimatedVolume: string }) => {
+    mutationFn: async (data: { name: string; description: string; latitude: string; longitude: string; status: string; estimatedVolume: string; accessibility: string; partnerInfo: string }) => {
       const res = await apiRequest("POST", "/api/hotspots", data);
       return res.json();
     },
@@ -102,45 +150,61 @@ export default function HotspotsPage() {
     }
   });
 
-  const resetForm = () => {
-    setNewZoneName("");
-    setNewZoneDescription("");
-    setSelectedRegion("");
-    setCustomLat("");
-    setCustomLng("");
-  };
-
   const handleCreateZone = () => {
     if (!newZoneName.trim()) {
       toast({ title: "Please enter a zone name", variant: "destructive" });
       return;
     }
 
-    let lat = customLat;
-    let lng = customLng;
-
-    // If a region is selected, use its coordinates
-    if (selectedRegion) {
-      const region = KENYA_ZONES.find(z => z.name === selectedRegion);
-      if (region) {
-        lat = region.lat;
-        lng = region.lng;
-      }
-    }
-
-    if (!lat || !lng) {
-      toast({ title: "Please select a region or enter coordinates", variant: "destructive" });
+    if (!autoLat || !autoLng) {
+      toast({ title: "Please select a county and location", variant: "destructive" });
       return;
     }
 
     createMutation.mutate({
       name: newZoneName.trim(),
       description: newZoneDescription.trim(),
-      latitude: lat,
-      longitude: lng,
+      latitude: autoLat,
+      longitude: autoLng,
       status: "active",
-      estimatedVolume: "0"
+      estimatedVolume: "0",
+      accessibility: newZoneAccessibility,
+      partnerInfo: newZonePartnerInfo.trim()
     });
+  };
+
+  const handleEditSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingHotspot) return;
+
+    // We already have the state updated in the editingHotspot object if we used controlled inputs properly,
+    // but here I'm using a simpler approach or local variables?
+    // Let's assume we update ONE field or use a separate form state for editing.
+    // For simplicity, let's just use the `editingHotspot` object itself if we made it mutable in state, 
+    // OR create a separate edit form state. 
+    // Let's use `editingHotspot` + `updateMutation`.
+
+    // Actually, distinct states for edit form is cleaner.
+    // For now, I'll pass the current `newZonePartnerInfo` etc if I reused them, but renaming them to generic `formState` would be better.
+    // I will stick to reusing the "Add Zone" form state for "Edit" or just create a small Edit Dialog for Partner Info specifically as requested.
+
+    updateMutation.mutate({
+      id: editingHotspot.id,
+      updates: {
+        partnerInfo: newZonePartnerInfo,
+        description: newZoneDescription,
+        accessibility: newZoneAccessibility
+      }
+    });
+  };
+
+  const openEditDialog = (hotspot: Hotspot) => {
+    setEditingHotspot(hotspot);
+    setNewZoneName(hotspot.name); // Just for display
+    setNewZoneDescription(hotspot.description || "");
+    setNewZoneAccessibility(hotspot.accessibility || "Truck");
+    setNewZonePartnerInfo(hotspot.partnerInfo || "");
+    setIsEditOpen(true);
   };
 
   // Filter hotspots by status
@@ -183,7 +247,7 @@ export default function HotspotsPage() {
                 <TabsTrigger value="cleared">Cleared</TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button onClick={() => setIsAddZoneOpen(true)} className="gap-2">
+            <Button onClick={() => { resetForm(); setIsAddZoneOpen(true); }} className="gap-2">
               <Plus className="h-4 w-4" />
               Add Zone
             </Button>
@@ -239,13 +303,18 @@ export default function HotspotsPage() {
                             <MapPin className="h-3 w-3" /> Zone {hotspot.id}
                           </span>
                         </div>
-                        <div className="text-xs grid grid-cols-2 gap-2">
+                        <div className="text-xs grid grid-cols-2 gap-2 mb-2">
                           <div className="bg-muted rounded px-2 py-1">
                             Est. Volume: <span className="font-medium text-foreground">{hotspot.estimatedVolume}kg</span>
                           </div>
+                          <div className="bg-muted rounded px-2 py-1 truncate">
+                            Access: <span className="font-medium text-foreground">{hotspot.accessibility || "N/A"}</span>
+                          </div>
+                        </div>
+                        <div className="text-xs flex gap-2">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-6 text-xs w-full">
+                              <Button variant="outline" size="sm" className="h-6 text-xs flex-1">
                                 Change Status
                               </Button>
                             </DropdownMenuTrigger>
@@ -261,6 +330,9 @@ export default function HotspotsPage() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
+                          <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={(e) => { e.stopPropagation(); openEditDialog(hotspot); }}>
+                            Edit
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -270,13 +342,19 @@ export default function HotspotsPage() {
             </Card>
 
             {/* Map View */}
-            <Card className="lg:col-span-2 shadow-md flex flex-col overflow-hidden">
+            <Card className="lg:col-span-2 shadow-md flex flex-col overflow-hidden relative">
               <HotspotMap
                 hotspots={filteredHotspots}
                 className="w-full h-full rounded-none"
                 center={selectedHotspot ? [Number(selectedHotspot.latitude), Number(selectedHotspot.longitude)] : undefined}
                 zoom={selectedHotspot ? 14 : undefined}
               />
+              {selectedHotspot && selectedHotspot.partnerInfo && (
+                <div className="absolute bottom-4 left-4 right-4 bg-background/95 backdrop-blur p-4 rounded-lg border shadow-lg max-w-lg">
+                  <h4 className="font-semibold text-sm mb-1 text-primary">Partner / Recycler Instructions</h4>
+                  <p className="text-sm text-muted-foreground">{selectedHotspot.partnerInfo}</p>
+                </div>
+              )}
             </Card>
           </div>
         )}
@@ -290,7 +368,7 @@ export default function HotspotsPage() {
                 Create a new zone where field officers will collect plastic waste.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto px-1">
               <div className="space-y-2">
                 <Label htmlFor="zoneName">Zone Name *</Label>
                 <Input
@@ -299,6 +377,21 @@ export default function HotspotsPage() {
                   value={newZoneName}
                   onChange={(e) => setNewZoneName(e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Accessibility (Logistics) *</Label>
+                <Select value={newZoneAccessibility} onValueChange={setNewZoneAccessibility}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select accessibility type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Truck">Truck Access</SelectItem>
+                    <SelectItem value="Motorbike">Motorbike Only</SelectItem>
+                    <SelectItem value="Foot">Foot / Cart Only</SelectItem>
+                    <SelectItem value="Boat">Boat Access</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -313,54 +406,74 @@ export default function HotspotsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Region (Kenya)</Label>
-                <Select value={selectedRegion} onValueChange={(val) => {
-                  setSelectedRegion(val);
-                  // Clear custom coordinates when region is selected
-                  setCustomLat("");
-                  setCustomLng("");
+                <Label htmlFor="partnerInfo">Partner Info / Recycler Instructions</Label>
+                <Textarea
+                  id="partnerInfo"
+                  placeholder="Tools needed, safety warnings, pickup instructions..."
+                  value={newZonePartnerInfo}
+                  onChange={(e) => setNewZonePartnerInfo(e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>County *</Label>
+                <Select value={selectedCounty} onValueChange={(val) => {
+                  setSelectedCounty(val);
+                  setSelectedSubLocation("");
+                  setAutoLat("");
+                  setAutoLng("");
                 }}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a region..." />
+                    <SelectValue placeholder="Select county..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {KENYA_ZONES.map(zone => (
-                      <SelectItem key={zone.name} value={zone.name}>
-                        {zone.name}
+                    {Object.keys(KENYA_COASTAL_LOCATIONS).map(county => (
+                      <SelectItem key={county} value={county}>
+                        {county}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="text-center text-xs text-muted-foreground">— or enter custom coordinates —</div>
+              {selectedCounty && (
+                <div className="space-y-2">
+                  <Label>Location *</Label>
+                  <Select value={selectedSubLocation} onValueChange={(val) => {
+                    setSelectedSubLocation(val);
+                    const location = subLocations.find(loc => loc.name === val);
+                    if (location) {
+                      setAutoLat(location.lat);
+                      setAutoLng(location.lng);
+                    }
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select location..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subLocations.map(loc => (
+                        <SelectItem key={loc.name} value={loc.name}>
+                          {loc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="lat">Latitude</Label>
-                  <Input
-                    id="lat"
-                    placeholder="-3.6305"
-                    value={customLat}
-                    onChange={(e) => {
-                      setCustomLat(e.target.value);
-                      setSelectedRegion(""); // Clear region when custom coords entered
-                    }}
-                  />
+              {autoLat && autoLng && (
+                <div className="bg-muted/50 rounded-md p-3 text-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Auto-detected Coordinates</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>Latitude: <span className="font-mono text-foreground">{autoLat}°</span></div>
+                    <div>Longitude: <span className="font-mono text-foreground">{autoLng}°</span></div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lng">Longitude</Label>
-                  <Input
-                    id="lng"
-                    placeholder="39.8499"
-                    value={customLng}
-                    onChange={(e) => {
-                      setCustomLng(e.target.value);
-                      setSelectedRegion(""); // Clear region when custom coords entered
-                    }}
-                  />
-                </div>
-              </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { resetForm(); setIsAddZoneOpen(false); }}>
@@ -373,7 +486,59 @@ export default function HotspotsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Zone Dialog */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Zone Details</DialogTitle>
+              <DialogDescription>
+                Update information for {editingHotspot?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Accessibility</Label>
+                <Select value={newZoneAccessibility} onValueChange={setNewZoneAccessibility}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select accessibility type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Truck">Truck Access</SelectItem>
+                    <SelectItem value="Motorbike">Motorbike Only</SelectItem>
+                    <SelectItem value="Foot">Foot / Cart Only</SelectItem>
+                    <SelectItem value="Boat">Boat Access</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={newZoneDescription}
+                  onChange={(e) => setNewZoneDescription(e.target.value)}
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Partner Info / Instructions</Label>
+                <Textarea
+                  value={newZonePartnerInfo}
+                  onChange={(e) => setNewZonePartnerInfo(e.target.value)}
+                  rows={3}
+                  placeholder="Tools, Pickup instructions etc."
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+              <Button onClick={handleEditSave} disabled={updateMutation.isPending}>
+                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-    </DashboardLayout>
+    </DashboardLayout >
   );
 }

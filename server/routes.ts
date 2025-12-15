@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertCollectionSchema, insertHotspotSchema, insertItemSchema } from "@shared/schema";
+import { insertCollectionSchema, insertHotspotSchema, insertCollectionItemSchema } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -147,7 +147,7 @@ export async function registerRoutes(
       }
 
       // We accept raw items, needs validation loop or schema array
-      const parsedItems = itemsRaw.map((i: any) => insertItemSchema.parse(i));
+      const parsedItems = itemsRaw.map((i: any) => insertCollectionItemSchema.parse(i));
 
       const collection = await storage.createCollection(parsedCollection, parsedItems);
       res.status(201).json(collection);
@@ -249,6 +249,63 @@ export async function registerRoutes(
     } catch (e) {
       console.error("Update user error:", e);
       res.status(500).send("Failed to update user");
+    }
+  });
+
+  // Notifications API
+  app.get("/api/notifications", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const user = req.user as any;
+    // Admin sees all? Or admin sees broadcast + their own?
+    // Super Admin should see everything or just what they sent?
+    // Current requirement: "Super Admin to... creating notifications... for system alerts"
+    // And "Dashboard showing max 5"
+    // Let's assume Admin/SuperAdmin sees ALL broadcasts + their specific ones.
+    const notifications = await storage.getNotifications(user.id);
+    res.json(notifications);
+  });
+
+  app.post("/api/notifications", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const user = req.user as any;
+    if (user.role !== 'super_admin' && user.role !== 'admin') return res.sendStatus(403);
+
+    try {
+      // Basic validation
+      const { type, title, message, userId } = req.body;
+      const notification = await storage.createNotification({
+        type,
+        title,
+        message,
+        userId: userId ?? null // Ensure null if undefined
+      });
+      res.status(201).json(notification);
+    } catch (e) {
+      res.status(400).json(e);
+    }
+  });
+
+  // Financial Metrics API
+  app.get("/api/metrics", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    // Everyone can view? or just admins? Super Admin dashboard uses it.
+    // Let's allow authenticated users for now, purely read-only for transparency if needed, or restrict to admin.
+    // Dashboard is super-admin only.
+    const metrics = await storage.getFinancialMetrics();
+    res.json(metrics);
+  });
+
+  app.post("/api/metrics", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const user = req.user as any;
+    if (user.role !== 'super_admin') return res.sendStatus(403);
+
+    try {
+      const { category, value, target } = req.body;
+      const metric = await storage.updateFinancialMetric(category, value, target);
+      res.json(metric);
+    } catch (e) {
+      res.status(400).json(e);
     }
   });
 

@@ -25,6 +25,8 @@ export const hotspots = pgTable("hotspots", {
   longitude: decimal("longitude").notNull(),
   status: text("status").notNull().default("active"), // active, cleared, critical
   estimatedVolume: decimal("estimated_volume").notNull().default("0"),
+  accessibility: text("accessibility"), // Truck, Motorbike, etc.
+  partnerInfo: text("partner_info"), // Instructions for recyclers
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -47,6 +49,25 @@ export const collectionItems = pgTable("collection_items", {
   collectionId: integer("collection_id").notNull().references(() => collections.id),
   materialType: text("material_type").notNull(), // pet, hdpe, etc
   weight: decimal("weight").notNull(),
+  bagCount: integer("bag_count"),
+});
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // alert, announcement, message
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  userId: integer("user_id"), // null = broadcast
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const financialMetrics = pgTable("financial_metrics", {
+  id: serial("id").primaryKey(),
+  category: text("category").notNull(), // Grant A, Runway, etc.
+  value: decimal("value").notNull(),
+  target: decimal("target"),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -82,27 +103,51 @@ export const collectionItemsRelations = relations(collectionItems, ({ one }) => 
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
-  password: true,
-  role: true,
-  name: true,
   email: true,
-  organization: true
+  name: true,
+  role: true,
+  password: true,
 });
 
-export const insertCollectionSchema = createInsertSchema(collections).omit({
-  id: true,
-  collectedAt: true,
-  status: true
+export const insertHotspotSchema = createInsertSchema(hotspots).pick({
+  name: true,
+  description: true,
+  latitude: true,
+  longitude: true,
+  status: true,
+  estimatedVolume: true,
+  accessibility: true,
+  partnerInfo: true,
 });
 
-export const insertHotspotSchema = createInsertSchema(hotspots).omit({
-  id: true,
-  createdAt: true
+export const insertCollectionSchema = createInsertSchema(collections).pick({
+  hotspotId: true,
+  userId: true,
+  notes: true,
+  newHotspotName: true,
+  isNewHotspot: true,
+  gpsLatitude: true,
+  gpsLongitude: true,
+  imageUrl: true,
 });
 
-export const insertItemSchema = createInsertSchema(collectionItems).omit({
-  id: true,
-  collectionId: true
+export const insertCollectionItemSchema = createInsertSchema(collectionItems).pick({
+  materialType: true,
+  weight: true,
+  bagCount: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).pick({
+  type: true,
+  title: true,
+  message: true,
+  userId: true,
+});
+
+export const insertMetricSchema = createInsertSchema(financialMetrics).pick({
+  category: true,
+  value: true,
+  target: true,
 });
 
 export type User = typeof users.$inferSelect;
@@ -112,5 +157,8 @@ export type InsertHotspot = z.infer<typeof insertHotspotSchema>;
 export type Collection = typeof collections.$inferSelect;
 export type InsertCollection = z.infer<typeof insertCollectionSchema>;
 export type CollectionItem = typeof collectionItems.$inferSelect;
-export type InsertItem = z.infer<typeof insertItemSchema>;
-
+export type InsertCollectionItem = z.infer<typeof insertCollectionItemSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type FinancialMetric = typeof financialMetrics.$inferSelect;
+export type InsertMetric = z.infer<typeof insertMetricSchema>;

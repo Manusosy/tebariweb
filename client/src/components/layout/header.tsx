@@ -10,6 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 
 interface HeaderProps {
   userName: string;
@@ -18,6 +20,14 @@ interface HeaderProps {
 }
 
 export function Header({ userName, userEmail, userAvatar }: HeaderProps) {
+  const { logoutMutation } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const handleSignOut = async () => {
+    await logoutMutation.mutateAsync();
+    setLocation("/login");
+  };
+
   return (
     <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 flex items-center justify-between sticky top-0 z-10">
       <div className="flex items-center gap-4 flex-1 max-w-xl">
@@ -33,7 +43,7 @@ export function Header({ userName, userEmail, userAvatar }: HeaderProps) {
 
       <div className="flex items-center gap-4">
         <ThemeToggle />
-        
+
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           <span className="absolute top-2 right-2 h-2 w-2 bg-primary rounded-full animate-pulse" />
@@ -43,9 +53,9 @@ export function Header({ userName, userEmail, userAvatar }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
               {userAvatar ? (
-                <img 
-                  src={userAvatar} 
-                  alt={userName} 
+                <img
+                  src={userAvatar}
+                  alt={userName}
                   className="h-9 w-9 rounded-full object-cover border border-border"
                 />
               ) : (
@@ -68,8 +78,11 @@ export function Header({ userName, userEmail, userAvatar }: HeaderProps) {
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
-              Log out
+            <DropdownMenuItem
+              className="text-destructive cursor-pointer"
+              onClick={handleSignOut}
+            >
+              Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -77,3 +90,4 @@ export function Header({ userName, userEmail, userAvatar }: HeaderProps) {
     </header>
   );
 }
+

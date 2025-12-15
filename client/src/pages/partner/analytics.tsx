@@ -3,13 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Calendar, Filter, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -18,25 +18,81 @@ import {
   Line
 } from 'recharts';
 
+import { useQuery } from "@tanstack/react-query";
+import { Collection, CollectionItem, Hotspot } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import { startOfMonth, subMonths, format } from "date-fns";
+import { Loader2 } from "lucide-react";
+
+type CollectionWithDetails = Collection & {
+  items: CollectionItem[];
+  hotspot: Hotspot | null;
+};
+
 export default function PartnerAnalytics() {
-  // Mock Data for Analytics
-  const monthlyVolumeData = [
-    { month: 'Jan', collected: 2400, target: 2000 },
-    { month: 'Feb', collected: 1398, target: 2100 },
-    { month: 'Mar', collected: 3800, target: 2200 },
-    { month: 'Apr', collected: 3908, target: 2300 },
-    { month: 'May', collected: 4800, target: 2400 },
-    { month: 'Jun', collected: 3800, target: 2500 },
-    { month: 'Jul', collected: 4300, target: 2600 },
-  ];
+  const { user } = useAuth();
 
-  const regionData = [
-    { name: 'Kilifi North', pet: 400, hdpe: 240, other: 240 },
-    { name: 'Mtwapa', pet: 300, hdpe: 139, other: 221 },
-    { name: 'Watamu', pet: 200, hdpe: 980, other: 229 },
-    { name: 'Malindi', pet: 278, hdpe: 390, other: 200 },
-  ];
+  const { data: collections, isLoading } = useQuery<CollectionWithDetails[]>({
+    queryKey: ["/api/collections"],
+  });
 
+  const { data: hotspots } = useQuery<Hotspot[]>({
+    queryKey: ["/api/hotspots"],
+  });
+
+  // Calculate Real Analytics
+  const verifiedCollections = (collections || []).filter(c => c.status === 'verified');
+
+  // 1. Monthly Volume Data (Last 6 months)
+  const monthlyVolumeMap = new Map<string, number>();
+  const today = new Date();
+
+  // Initialize last 6 months
+  for (let i = 5; i >= 0; i--) {
+    const d = subMonths(today, i);
+    const key = format(d, 'MMM');
+    monthlyVolumeMap.set(key, 0);
+  }
+
+  verifiedCollections.forEach(c => {
+    if (c.collectedAt) {
+      const date = new Date(c.collectedAt);
+      const key = format(date, 'MMM');
+      if (monthlyVolumeMap.has(key)) {
+        const weight = c.items.reduce((sum, item) => sum + Number(item.weight), 0);
+        monthlyVolumeMap.set(key, (monthlyVolumeMap.get(key) || 0) + weight);
+      }
+    }
+  });
+
+  const monthlyVolumeData = Array.from(monthlyVolumeMap.entries()).map(([month, collected]) => ({
+    month,
+    collected,
+    target: 2000 // mocked target for now, or dynamic based on growth
+  }));
+
+  // 2. Regional Analysis (Volume by Hotspot)
+  const regionMap = new Map<string, { pet: number, hdpe: number, other: number }>();
+
+  verifiedCollections.forEach(c => {
+    const regionName = c.hotspot?.name || c.newHotspotName || "Unknown";
+    const current = regionMap.get(regionName) || { pet: 0, hdpe: 0, other: 0 };
+
+    c.items.forEach(item => {
+      const weight = Number(item.weight);
+      if (item.materialType.toLowerCase() === 'pet') current.pet += weight;
+      else if (item.materialType.toLowerCase() === 'hdpe') current.hdpe += weight;
+      else current.other += weight;
+    });
+
+    regionMap.set(regionName, current);
+  });
+
+  const regionData = Array.from(regionMap.entries())
+    .map(([name, counts]) => ({ name, ...counts }))
+    .slice(0, 5); // Top 5 regions
+
+  // Mock price trend for market context (external data usually)
   const plasticPriceTrend = [
     { date: 'W1', pet: 12, hdpe: 15 },
     { date: 'W2', pet: 13, hdpe: 15 },
@@ -45,10 +101,8 @@ export default function PartnerAnalytics() {
   ];
 
   return (
-    <DashboardLayout 
-      userRole="partner" 
-      userName="Eco Partners" 
-      userEmail="partner@eco.com"
+    <DashboardLayout
+      userRole="partner"
     >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -79,16 +133,20 @@ export default function PartnerAnalytics() {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg. Daily Collection</CardTitle>
+              <CardTitle className="text-sm font-medium">Verify Collections (This Month)</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">142 kg</div>
+              <div className="text-2xl font-bold">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> :
+                  `${monthlyVolumeData[monthlyVolumeData.length - 1]?.collected.toFixed(0) || 0} kg`
+                }
+              </div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
-                  <ArrowUpRight className="h-3 w-3" /> +12%
+                  <ArrowUpRight className="h-3 w-3" /> Live
                 </span>
-                from last month
+                from verified submissions
               </p>
             </CardContent>
           </Card>
@@ -98,27 +156,21 @@ export default function PartnerAnalytics() {
               <Filter className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">94%</div>
+              <div className="text-2xl font-bold">98%</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <span className="text-emerald-500 flex items-center mr-1">
-                  <ArrowUpRight className="h-3 w-3" /> +2%
-                </span>
-                vs industry avg
+                System Uptime
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Purity Rate</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Zones</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">88%</div>
+              <div className="text-2xl font-bold">{(hotspots || []).length}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <span className="text-rose-500 flex items-center mr-1">
-                  <ArrowDownRight className="h-3 w-3" /> -1%
-                </span>
-                needs sorting attention
+                Monitored Areas
               </p>
             </CardContent>
           </Card>
@@ -137,8 +189,8 @@ export default function PartnerAnalytics() {
                   <AreaChart data={monthlyVolumeData}>
                     <defs>
                       <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />

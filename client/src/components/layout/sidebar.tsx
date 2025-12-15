@@ -16,10 +16,12 @@ import {
   LucideIcon,
   Truck,
   PieChart,
-  Briefcase
+  Briefcase,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SidebarProps {
   role: 'super_admin' | 'admin' | 'field_officer' | 'partner';
@@ -34,22 +36,29 @@ interface SidebarLink {
 }
 
 export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
+  const { logoutMutation } = useAuth();
+
+  const handleSignOut = async () => {
+    await logoutMutation.mutateAsync();
+    setLocation("/login");
+  };
 
   const commonLinks: SidebarLink[] = [];
 
   const superAdminLinks: SidebarLink[] = [
     { href: '/executive', label: 'Executive Overview', icon: Briefcase },
+    { href: '/super-admin/notifications', label: 'Notifications', icon: Bell },
     // Super admin also inherits admin links usually, but let's keep it focused for this role based on PRD
     { href: '/dashboard', label: 'Ops Dashboard', icon: LayoutDashboard },
+    { href: '/hotspots', label: 'Collection Zones', icon: MapPin },
     { href: '/reports', label: 'Global Reports', icon: BarChart3 },
     { href: '/officers', label: 'Team Mgmt', icon: Users },
   ];
 
   const adminLinks: SidebarLink[] = [
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-    { href: '/map', label: 'Map View', icon: Map },
     { href: '/hotspots', label: 'Zones', icon: MapPin },
     { href: '/officers', label: 'Field Officers', icon: Users },
     { href: '/submissions', label: 'Submissions', icon: FileText },
@@ -125,14 +134,19 @@ export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
           <Settings size={20} />
           {!collapsed && <span>Settings</span>}
         </Link>
-        <Link href="/" className={cn(
-          "flex items-center gap-3 px-4 py-3 rounded-md transition-colors text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer block",
-          collapsed && "justify-center px-2"
-        )}>
+        <button
+          onClick={handleSignOut}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-md transition-colors text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer",
+            collapsed && "justify-center px-2"
+          )}
+          title={collapsed ? "Sign Out" : undefined}
+        >
           <LogOut size={20} />
           {!collapsed && <span>Sign Out</span>}
-        </Link>
+        </button>
       </div>
     </div>
   );
 }
+

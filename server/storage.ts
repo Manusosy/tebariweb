@@ -1,9 +1,9 @@
-import { type User, type InsertUser, type Hotspot, type InsertHotspot, type Collection, type InsertCollection, type CollectionItem, type InsertItem } from "@shared/schema";
+import { type User, type InsertUser, type Hotspot, type InsertHotspot, type Collection, type InsertCollection, type CollectionItem, type InsertCollectionItem, type UserWithHotspot, type Notification, type InsertNotification, type FinancialMetric, type InsertMetric } from "@shared/schema";
 import { supabase } from "./db";
 
 export interface IStorage {
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUser(id: number): Promise<UserWithHotspot | undefined>;
+  getUserByUsername(username: string): Promise<UserWithHotspot | undefined>;
   getUsers(): Promise<(User & { assignedHotspot: Hotspot | null })[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User>;
@@ -14,32 +14,85 @@ export interface IStorage {
   deleteHotspot(id: number): Promise<void>;
 
   getCollections(userId?: number): Promise<(Collection & { items: CollectionItem[], hotspot: Hotspot | null })[]>;
-  createCollection(collection: InsertCollection, items: InsertItem[]): Promise<Collection>;
+  createCollection(collection: InsertCollection, items: InsertCollectionItem[]): Promise<Collection>;
   updateCollectionStatus(id: number, status: string): Promise<Collection>;
   deleteCollection(id: number): Promise<void>;
+
+  // Notifications
+  getNotifications(userId?: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationRead(id: number): Promise<void>;
+
+  // Financial Metrics
+  getFinancialMetrics(): Promise<FinancialMetric[]>;
+  updateFinancialMetric(category: string, value: number, target?: number): Promise<FinancialMetric>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: number): Promise<UserWithHotspot | undefined> {
     const { data, error } = await supabase
       .from("users")
-      .select("*")
+      .select("*, assignedHotspot:hotspots(*)")
       .eq("id", id)
       .single();
 
     if (error || !data) return undefined;
-    return data as User;
+
+    // Map snake_case to camelCase
+    return {
+      id: data.id,
+      username: data.username,
+      password: data.password,
+      role: data.role,
+      name: data.name,
+      email: data.email,
+      organization: data.organization,
+      status: data.status,
+      assignedHotspotId: data.assigned_hotspot_id,
+      assignedHotspot: data.assignedHotspot ? {
+        id: data.assignedHotspot.id,
+        name: data.assignedHotspot.name,
+        description: data.assignedHotspot.description,
+        latitude: data.assignedHotspot.latitude,
+        longitude: data.assignedHotspot.longitude,
+        status: data.assignedHotspot.status,
+        estimatedVolume: data.assignedHotspot.estimated_volume,
+        createdAt: data.assignedHotspot.created_at ? new Date(data.assignedHotspot.created_at) : null
+      } : null
+    };
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByUsername(username: string): Promise<UserWithHotspot | undefined> {
     const { data, error } = await supabase
       .from("users")
-      .select("*")
+      .select("*, assignedHotspot:hotspots(*)")
       .eq("username", username)
       .single();
 
     if (error || !data) return undefined;
-    return data as User;
+
+    // Map snake_case to camelCase
+    return {
+      id: data.id,
+      username: data.username,
+      password: data.password,
+      role: data.role,
+      name: data.name,
+      email: data.email,
+      organization: data.organization,
+      status: data.status,
+      assignedHotspotId: data.assigned_hotspot_id,
+      assignedHotspot: data.assignedHotspot ? {
+        id: data.assignedHotspot.id,
+        name: data.assignedHotspot.name,
+        description: data.assignedHotspot.description,
+        latitude: data.assignedHotspot.latitude,
+        longitude: data.assignedHotspot.longitude,
+        status: data.assignedHotspot.status,
+        estimatedVolume: data.assignedHotspot.estimated_volume,
+        createdAt: data.assignedHotspot.created_at ? new Date(data.assignedHotspot.created_at) : null
+      } : null
+    };
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -54,20 +107,61 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getHotspots(): Promise<Hotspot[]> {
-    const { data, error } = await supabase.from("hotspots").select("*");
+    const { data, error } = await supabase
+      .from("hotspots")
+      .select("*")
+      .order("name");
+
     if (error) throw new Error(error.message);
-    return (data || []) as Hotspot[];
+
+    // Map snake_case to camelCase
+    return (data || []).map((h: any) => ({
+      id: h.id,
+      name: h.name,
+      description: h.description,
+      latitude: h.latitude,
+      longitude: h.longitude,
+      status: h.status,
+      estimatedVolume: h.estimated_volume,
+      accessibility: h.accessibility,
+      partnerInfo: h.partner_info,
+      createdAt: h.created_at ? new Date(h.created_at) : null
+    }));
   }
 
   async createHotspot(hotspot: InsertHotspot): Promise<Hotspot> {
+    // Map camelCase to snake_case for database columns
+    const dbPayload = {
+      name: hotspot.name,
+      description: hotspot.description || null,
+      latitude: hotspot.latitude,
+      longitude: hotspot.longitude,
+      status: hotspot.status || 'active',
+      estimated_volume: hotspot.estimatedVolume || '0',
+      accessibility: hotspot.accessibility || null,
+      partner_info: hotspot.partnerInfo || null,
+    };
+
     const { data, error } = await supabase
       .from("hotspots")
-      .insert(hotspot)
+      .insert(dbPayload)
       .select()
       .single();
 
     if (error) throw new Error(error.message);
-    return data as Hotspot;
+
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      status: data.status,
+      estimatedVolume: data.estimated_volume,
+      accessibility: data.accessibility,
+      partnerInfo: data.partner_info,
+      createdAt: data.created_at ? new Date(data.created_at) : null
+    };
   }
 
   async updateHotspot(id: number, updates: Partial<Hotspot>): Promise<Hotspot> {
@@ -77,6 +171,8 @@ export class DatabaseStorage implements IStorage {
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.estimatedVolume !== undefined) dbUpdates.estimated_volume = updates.estimatedVolume;
+    if (updates.accessibility !== undefined) dbUpdates.accessibility = updates.accessibility;
+    if (updates.partnerInfo !== undefined) dbUpdates.partner_info = updates.partnerInfo;
     if (updates.latitude !== undefined) dbUpdates.latitude = updates.latitude;
     if (updates.longitude !== undefined) dbUpdates.longitude = updates.longitude;
 
@@ -96,6 +192,8 @@ export class DatabaseStorage implements IStorage {
       longitude: data.longitude,
       status: data.status,
       estimatedVolume: data.estimated_volume,
+      accessibility: data.accessibility,
+      partnerInfo: data.partner_info,
       createdAt: data.created_at ? new Date(data.created_at) : null
     };
   }
@@ -147,12 +245,14 @@ export class DatabaseStorage implements IStorage {
         longitude: c.hotspot.longitude,
         status: c.hotspot.status,
         estimatedVolume: c.hotspot.estimated_volume,
+        accessibility: c.hotspot.accessibility,
+        partnerInfo: c.hotspot.partner_info,
         createdAt: c.hotspot.created_at ? new Date(c.hotspot.created_at) : null
       } : null
     }));
   }
 
-  async createCollection(collection: InsertCollection, items: InsertItem[]): Promise<Collection> {
+  async createCollection(collection: InsertCollection, items: InsertCollectionItem[]): Promise<Collection> {
     const collectionPayload = {
       user_id: collection.userId,
       hotspot_id: collection.hotspotId,
@@ -265,6 +365,7 @@ export class DatabaseStorage implements IStorage {
         longitude: u.assignedHotspot.longitude,
         status: u.assignedHotspot.status,
         estimatedVolume: u.assignedHotspot.estimated_volume,
+        accessibility: u.assignedHotspot.accessibility,
         createdAt: u.assignedHotspot.created_at ? new Date(u.assignedHotspot.created_at) : null
       } : null
     }));
@@ -296,6 +397,129 @@ export class DatabaseStorage implements IStorage {
       organization: data.organization,
       status: data.status,
       assignedHotspotId: data.assigned_hotspot_id
+    };
+  }
+
+  // Notifications
+  async getNotifications(userId?: number): Promise<Notification[]> {
+    let query = supabase
+      .from("notifications")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (userId) {
+      query = query.or(`user_id.is.null,user_id.eq.${userId}`);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+
+    return (data || []).map((n: any) => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      message: n.message,
+      userId: n.user_id,
+      read: n.read,
+      createdAt: n.created_at ? new Date(n.created_at) : null
+    }));
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const { data, error } = await supabase
+      .from("notifications")
+      .insert({
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        user_id: notification.userId
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    return {
+      id: data.id,
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      userId: data.user_id,
+      read: data.read,
+      createdAt: data.created_at ? new Date(data.created_at) : null
+    };
+  }
+
+  async markNotificationRead(id: number): Promise<void> {
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("id", id);
+
+    if (error) throw new Error(error.message);
+  }
+
+  // Financial Metrics
+  async getFinancialMetrics(): Promise<FinancialMetric[]> {
+    const { data, error } = await supabase
+      .from("financial_metrics")
+      .select("*");
+
+    if (error) throw new Error(error.message);
+
+    return (data || []).map((m: any) => ({
+      id: m.id,
+      category: m.category,
+      value: m.value,
+      target: m.target,
+      updatedAt: m.updated_at ? new Date(m.updated_at) : null
+    }));
+  }
+
+  async updateFinancialMetric(category: string, value: number, target?: number): Promise<FinancialMetric> {
+    // Check if exists
+    const { data: existing } = await supabase
+      .from("financial_metrics")
+      .select("id")
+      .eq("category", category)
+      .single();
+
+    let result;
+
+    if (existing) {
+      const updates: any = { value, updated_at: new Date().toISOString() };
+      if (target !== undefined) updates.target = target;
+
+      const { data, error } = await supabase
+        .from("financial_metrics")
+        .update(updates)
+        .eq("category", category)
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+      result = data;
+    } else {
+      const { data, error } = await supabase
+        .from("financial_metrics")
+        .insert({
+          category,
+          value,
+          target: target || null
+        })
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+      result = data;
+    }
+
+    return {
+      id: result.id,
+      category: result.category,
+      value: result.value,
+      target: result.target,
+      updatedAt: result.updated_at ? new Date(result.updated_at) : null
     };
   }
 }

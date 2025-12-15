@@ -17,9 +17,11 @@ import SubmissionsPage from "@/pages/admin/submissions";
 import HotspotsPage from "@/pages/admin/hotspots";
 import OfficersPage from "@/pages/admin/officers";
 import AdminReportsPage from "@/pages/admin/reports";
+import MapViewPage from "@/pages/admin/map-view";
 
 // Super Admin Pages
 import SuperAdminDashboard from "@/pages/super-admin/dashboard";
+import NotificationsPage from "@/pages/super-admin/notifications";
 
 // Field Officer Pages
 import FieldOverview from "@/pages/field/overview";
@@ -75,10 +77,11 @@ function Router() {
 
       {/* Super Admin Routes */}
       <ProtectedRoute path="/executive" component={SuperAdminDashboard} />
+      <ProtectedRoute path="/super-admin/notifications" component={NotificationsPage} />
 
       {/* Admin Routes */}
       <ProtectedRoute path="/dashboard" component={AdminDashboard} />
-      <ProtectedRoute path="/map" component={AdminDashboard} />
+      <ProtectedRoute path="/map" component={MapViewPage} />
       <ProtectedRoute path="/submissions" component={SubmissionsPage} />
       <ProtectedRoute path="/hotspots" component={HotspotsPage} />
       <ProtectedRoute path="/officers" component={OfficersPage} />
