@@ -66,12 +66,12 @@ export default function PartnerCollections() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-8 bg-muted/30 p-4 rounded-lg">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 bg-muted/30 p-4 rounded-lg w-full md:w-auto">
                       <div className="text-center">
                         <p className="text-xs text-muted-foreground uppercase font-semibold">Estimated Volume</p>
                         <p className="text-2xl font-bold text-primary">{spot.estimatedVolume} kg</p>
                       </div>
-                      <div className="h-8 w-px bg-border" />
+                      <div className="h-px w-full sm:w-px sm:h-8 bg-border" />
                       <div className="text-center">
                         <p className="text-xs text-muted-foreground uppercase font-semibold">Accessibility</p>
                         <p className="text-lg font-medium">{spot.accessibility || "Not specified"}</p>

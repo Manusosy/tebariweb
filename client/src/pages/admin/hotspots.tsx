@@ -266,9 +266,9 @@ export default function HotspotsPage() {
             <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/hotspots"] })}>Retry</Button>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+          <div className="grid lg:grid-cols-3 gap-6 lg:h-[calc(100vh-200px)] h-auto">
             {/* List Sidebar */}
-            <Card className="lg:col-span-1 flex flex-col h-full shadow-md">
+            <Card className="lg:col-span-1 flex flex-col h-full shadow-md min-h-[400px] lg:min-h-0">
               <CardHeader>
                 <CardTitle className="text-base">
                   {statusFilter === "all" ? "All Zones" : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Zones`} ({filteredHotspots.length})
@@ -342,7 +342,7 @@ export default function HotspotsPage() {
             </Card>
 
             {/* Map View */}
-            <Card className="lg:col-span-2 shadow-md flex flex-col overflow-hidden relative">
+            <Card className="lg:col-span-2 shadow-md flex flex-col overflow-hidden relative min-h-[500px] lg:min-h-0">
               <HotspotMap
                 hotspots={filteredHotspots}
                 className="w-full h-full rounded-none"

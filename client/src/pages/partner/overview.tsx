@@ -178,7 +178,7 @@ export default function PartnerOverview() {
           </Card>
 
           {/* Field Notes */}
-          <Card className="col-span-2 shadow-sm">
+          <Card className="lg:col-span-2 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />

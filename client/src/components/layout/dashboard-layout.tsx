@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { UserRole } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -24,10 +25,26 @@ export function DashboardLayout({
   const finalRole = userRole || (user?.role as UserRole) || 'field_officer';
   const finalName = userName || user?.name || 'User';
   const finalEmail = userEmail || user?.email || '';
+  const isMobile = useIsMobile();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Auto-collapse sidebar on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarCollapsed(true);
+    }
+  }, [isMobile]);
+
   return (
-    <div className="flex h-screen w-full bg-muted/20 overflow-hidden">
+    <div className="flex h-screen w-full bg-muted/20 overflow-hidden relative">
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && !sidebarCollapsed && (
+        <div
+          className="fixed inset-0 bg-black/50 z-10 transition-opacity animate-in fade-in"
+          onClick={() => setSidebarCollapsed(true)}
+        />
+      )}
+
       <Sidebar
         role={finalRole}
         collapsed={sidebarCollapsed}

@@ -262,7 +262,7 @@ export default function NewCollectionPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
-              <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/30 p-3 rounded-lg border">
                 <div className="space-y-1">
                   <Label htmlFor="location-mode" className="text-xs uppercase text-muted-foreground">Collection Site</Label>
                   <div className="flex items-center gap-2">
@@ -272,8 +272,8 @@ export default function NewCollectionPage() {
                     </Label>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className={`text-xs font-mono px-2 py-1 rounded ${location ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                <div className="text-left sm:text-right">
+                  <div className={`text-xs font-mono px-2 py-1 rounded inline-block ${location ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'}`}>
                     {location ? `GPS: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : (geoError || "Locating...")}
                   </div>
                 </div>
