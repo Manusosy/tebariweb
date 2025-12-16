@@ -87,9 +87,10 @@ export function Sidebar({ role, collapsed, setCollapsed }: SidebarProps) {
   return (
     <div
       className={cn(
-        "h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-all duration-300 ease-in-out relative z-20",
-        collapsed ? "w-[70px]" : "w-[240px]",
-        isMobile && !collapsed ? "absolute inset-y-0 left-0 w-[240px] shadow-2xl" : ""
+        "h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-all duration-300 ease-in-out z-20",
+        isMobile
+          ? (collapsed ? "hidden" : "fixed inset-y-0 left-0 w-[240px] shadow-2xl")
+          : (collapsed ? "w-[70px]" : "w-[240px] relative")
       )}
     >
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border shrink-0">

@@ -51,11 +51,12 @@ export function DashboardLayout({
         setCollapsed={setSidebarCollapsed}
       />
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <Header
           userName={finalName}
           userEmail={finalEmail}
           userAvatar={userAvatar}
+          onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
         <main className="flex-1 overflow-y-auto p-6 scroll-smooth">
           <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">

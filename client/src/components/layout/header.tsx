@@ -1,4 +1,4 @@
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Search, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -17,9 +17,10 @@ interface HeaderProps {
   userName: string;
   userEmail: string;
   userAvatar?: string;
+  onMenuClick: () => void;
 }
 
-export function Header({ userName, userEmail, userAvatar }: HeaderProps) {
+export function Header({ userName, userEmail, userAvatar, onMenuClick }: HeaderProps) {
   const { logoutMutation } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -31,6 +32,9 @@ export function Header({ userName, userEmail, userAvatar }: HeaderProps) {
   return (
     <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 flex items-center justify-between sticky top-0 z-10">
       <div className="flex items-center gap-4 flex-1 max-w-xl">
+        <Button variant="ghost" size="icon" className="md:hidden mr-2 shrink-0" onClick={onMenuClick}>
+          <Menu className="h-5 w-5" />
+        </Button>
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
